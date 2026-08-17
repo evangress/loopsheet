@@ -1,0 +1,69 @@
+# ifm AL1350 — IO-Link master, DataLine, IoT.
+#
+# Sources and reasoning: docs/research/ifm-masters.md
+#
+# The headline fact this file exists to record: THE AL1350 HAS NO OPC UA SERVER.
+# The string "OPC" appears zero times in the full manual. Its IT-side interfaces
+# are ifm IoT Core (REST/JSON over HTTP(S)), WebSocket, MQTT, and the
+# proprietary LR AGENT / LR SMARTOBSERVER push. OPC UA on ifm lives on the
+# AL1590/AL1591 SolutionBlock.
+
+schema_version: 1
+part_number: AL1350
+vendor: ifm
+component_type: iolink_master
+product_name: IO-Link Master DataLine IoT
+family: DataLine
+description: >-
+  IO-Link master with an ifm IoT Core REST/JSON interface and MQTT. No fieldbus
+  protocol: this is the IoT variant of the DataLine family.
+
+sources:
+  - "ifm operating instructions AL1350, 80284128/03, FW 3.1.x"
+
+firmware: 3.1.x
+
+# Capability, not assumption. Attaching an opcua or ethernet_ip binding to this
+# part must fail validation naming what it does support.
+supported_bindings:
+  - protocol: iotcore
+    firmware: 3.1.x
+    verified: true
+    notes: >-
+      POST to / on port 80 (443 with security mode on) with a
+      {code, cid, adr, data, auth} envelope; GET for read-only access. PDIn is
+      returned as an uppercase hex string.
+
+  - protocol: mqtt
+    firmware: 3.1.x
+    verified: true
+    notes: >-
+      Publishing is a subscription whose callback URL is
+      mqtt://<brokerIP>:<brokerPort>/<topic> — ifm defines no topic hierarchy.
+      FW 3.1.x has no username, password, client-id, CA certificate or TLS
+      parameter anywhere in the profile: treat as plaintext, no auth. Max 10
+      simultaneous connections; wildcards + and # are not supported. Trigger is
+      either a timer[1..2] interval (500 ms minimum) or a port/device event.
+
+# Deliberately NOT listed, and each is a confirmed negative rather than an
+# omission:
+#   opcua        — "OPC" appears zero times in the manual
+#   ethernet_ip  — that is AL1320/AL1321/AL1322/AL1323
+#   modbus_tcp   — that is AL1342/AL1343
+
+port_count: null    # UNVERIFIED — the manual sections consulted do not state it.
+                    # Only AL1320/AL1321 (4-port) and AL1322/AL1323 (8-port) are
+                    # confirmed in the researched material.
+
+default_ip: null    # UNVERIFIED — 192.168.0.250 appears in the manual's IoT Core
+                    # examples, but as an example address rather than a stated
+                    # factory default.
+
+notes: >-
+  Cycle-time unit conflict, unresolved: §9.1.6 (web GUI) gives the master cycle
+  time in microseconds with range 0…132800, while §9.2.8 (IoT Core) gives the
+  same parameters in milliseconds. 132800 µs = 132.8 ms matches the IO-Link
+  maximum, so µs is almost certainly correct and the IoT table is the error —
+  but this has not been verified on hardware. The IoT Core port[n]/mode numeric
+  enum values are also unverified; resolve them at runtime via getelementinfo,
+  which returns format.valuation.valuelist.

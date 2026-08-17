@@ -1,0 +1,45 @@
+# ifm AL1352 — IO-Link master, DataLine, IoT.
+#
+# Sources and reasoning: docs/research/ifm-masters.md
+#
+# Same IT-side capability set as the AL1350: IoT Core + MQTT, NO OPC UA. The
+# IoT Core JSON examples in the AL1350 and AL1352 manuals are byte-identical.
+
+schema_version: 1
+part_number: AL1352
+vendor: ifm
+component_type: iolink_master
+product_name: IO-Link Master DataLine IoT
+family: DataLine
+description: >-
+  IO-Link master with an ifm IoT Core REST/JSON interface and MQTT. No fieldbus
+  protocol.
+
+sources:
+  - "ifm operating instructions AL1352, 80284138/03, FW 3.1.x"
+
+firmware: 3.1.x
+
+supported_bindings:
+  - protocol: iotcore
+    firmware: 3.1.x
+    verified: true
+    notes: >-
+      Identical envelope and paths to the AL1350 — the manuals' JSON examples
+      match byte for byte.
+
+  - protocol: mqtt
+    firmware: 3.1.x
+    verified: true
+    notes: >-
+      Plaintext, no auth on FW 3.1.x. Max 10 connections, no topic wildcards.
+
+# Confirmed absent: opcua, ethernet_ip, modbus_tcp.
+
+port_count: null    # UNVERIFIED — not stated in the researched material.
+default_ip: null    # UNVERIFIED
+
+notes: >-
+  Carries the same unresolved cycle-time unit conflict as the AL1350 (§9.1.6 µs
+  vs §9.2.8 ms for the same parameters) and the same unverified IoT Core
+  port[n]/mode enum values.

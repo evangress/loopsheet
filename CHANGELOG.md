@@ -22,11 +22,19 @@ minor; any rename or removal bumps its major and gets a migration note here.
 - `loopsheet.codec` — IO-Link datatypes, `ProcessDataItem` /
   `ProcessDataLayout` with overlap rejection, MSB-first `decode()`, and analog
   raw-count scaling with under/over-range and broken-wire handling.
+- `loopsheet.catalog` — `CatalogEntry` / `DeviceVariant` / `BindingSupport`,
+  an `importlib.resources` registry with a `loopsheet.catalog` entry-point
+  group for third-party vendor packs, and shipped ifm entries for the VVB020
+  sensor and the AL1350 / AL1352 / AL1320 / AL1322 masters.
+- `BindingProtocol` in `loopsheet.models` — shared by the catalog's
+  `supported_bindings` and, later, the binding union.
 
 ### Notes
 
 - Schema contract starts at `SCHEMA_VERSION = 1`; nothing is released yet, so
-  no migrations exist.
+  no migrations exist. Catalog files carry their own
+  `CATALOG_SCHEMA_VERSION = 1`, so a third-party vendor pack can pin an older
+  catalog schema than the machine-file schema in use.
 - The ifm VVB020 process-data bit layout remains **unverified** — IODDfinder
   requires a login and ifm.com blocks automated access. Catalog entries ship
   `process_data: null` and the golden-decode test stays unwritten. Tracked as

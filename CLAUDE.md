@@ -62,10 +62,16 @@ models/                 catalog/                bindings/
 
 ### The core-purity hard rule
 
-**`models/`, `codec/`, `bindings/`, and `catalog/` import nothing but `pydantic`
-and the stdlib.** Not `paho`, not `asyncua`, not `httpx`, not `pint` — not even
-guarded by a `try`. If a core module wants a protocol library, the abstraction
-is in the wrong place: stop and reconsider.
+**`models/`, `codec/`, `bindings/`, and `catalog/` import nothing but
+`pydantic`, `pyyaml`, and the stdlib.** Not `paho`, not `asyncua`, not `httpx`,
+not `pint` — not even guarded by a `try`. If a core module wants a protocol
+library, the abstraction is in the wrong place: stop and reconsider.
+
+`pyyaml` is in that list because it is a *core* dependency, not an extra: the
+catalog is YAML files, and `catalog/registry.py` has to read them. `models/`
+and `codec/` still import neither — they take parsed data. The rule that
+matters is that **nothing behind an optional extra is ever imported from
+core**, and that is what the test enforces.
 
 Two reasons this is load-bearing:
 

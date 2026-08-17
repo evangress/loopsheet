@@ -44,6 +44,7 @@ from loopsheet.models.daq import DaqDevice, EdgeDevice
 from loopsheet.models.datatype import IOLinkDataType
 from loopsheet.models.iolink import CycleTime, IOLinkMaster, Port, PortMode, ValidationMode
 from loopsheet.models.processdata import ProcessDataItem, ProcessDataLayout
+from loopsheet.models.protocol import BindingProtocol
 from loopsheet.models.reading import Quality, Reading
 from loopsheet.models.sensor import (
     AnalogSensor,
@@ -68,6 +69,7 @@ __all__ = [
     "AssetBase",
     "Axis",
     "Bearing",
+    "BindingProtocol",
     "ChannelSpec",
     "Chassis",
     "ComMode",

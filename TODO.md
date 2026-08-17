@@ -128,36 +128,62 @@ dependency out of `sys.modules` and imports each core module.
 
 ---
 
-## Phase 3 — Catalog
+## Phase 3 — Catalog ✅ *(one item blocked)*
 
-- [ ] `schema.py` — `CatalogEntry` covering identity, IO-Link block,
-      **`variants`**, channels, ISDU parameters, electrical, mechanical
-- [ ] **`DeviceVariant`** model — device ID, COM mode, min cycle time, IODD ref,
+- [x] `models/protocol.py` — `BindingProtocol` enum *(not in the original plan;
+      both `catalog` and Phase 5's `bindings` need it, and neither may depend on
+      the other, so it lives in `models` like `IOLinkDataType`)*
+- [x] `schema.py` — `CatalogEntry` covering identity, IO-Link block,
+      **`variants`**, channels, ISDU parameters, electrical, mechanical,
+      environment, and a **`sources`** provenance list
+- [x] **`DeviceVariant`** model — device ID, COM mode, min cycle time, IODD ref,
       `has_pdout`, optional `ProcessDataLayout`. A part number maps to *many*
       (VVB020 status A = 1257 / status B = 1369)
-- [ ] **`supported_bindings`** on master entries, and a validator that rejects a
-      binding the part cannot serve, naming what it *does* support
-- [ ] `registry.py` — `get()` / `list()` via `importlib.resources`;
-      never `__file__`-relative paths
-- [ ] Entry-point group `loopsheet.catalog` so third parties can ship vendor
-      packs; `list()` must not import vendor modules
-- [ ] `data/ifm/VVB020.yaml` — verified values only; `process_data: null` with
+- [x] **`supported_bindings`** on master entries, with `require_binding()`
+      raising `CapabilityError` naming what the part *does* support, and a
+      validator refusing a master entry that declares none
+- [x] `require_variant()` — refuses to pick a variant on the caller's behalf
+      when a part has more than one
+- [x] `registry.py` — `get()` / `list_parts()` / `vendors()` via
+      `importlib.resources`; never `__file__`-relative paths. `get()` returns a
+      deep copy so a caller cannot poison the cache
+- [x] Entry-point group `loopsheet.catalog` so third parties can ship vendor
+      packs; the built-in ifm pack registers through it too, so the third-party
+      path is the one actually exercised
+- [x] `data/ifm/VVB020.yaml` — verified values only; `process_data: null` with
       `# UNVERIFIED` until the IODD lands
-- [ ] `data/ifm/AL1350.yaml`, `AL1352.yaml` — IoT Core + MQTT, **no OPC UA**
-- [ ] `data/ifm/AL1320.yaml`, `AL1322.yaml` — EtherNet/IP + IoT Core
+- [x] `data/ifm/AL1350.yaml`, `AL1352.yaml` — IoT Core + MQTT, **no OPC UA**
+- [x] `data/ifm/AL1320.yaml`, `AL1322.yaml` — EtherNet/IP + IoT Core
       (MQTT on AL1320 FW 3.1.x only, not AL1322 FW 2.3.x)
-- [ ] Test: every shipped catalog file validates against `CatalogEntry`
-- [ ] Test: `catalog.get("ifm:VVB020")` returns both variants with distinct
-      device IDs
-- [ ] Test: attaching an OPC UA binding to an AL1350 raises with a message
+- [x] Test: every shipped catalog file validates against `CatalogEntry`, cites
+      its sources, and agrees with its own file path
+- [x] Test: `catalog.get("ifm:VVB020")` returns both variants with distinct
+      device IDs, COM modes, cycle times and PDOut flags
+- [x] Test: attaching an OPC UA binding to an AL1350 raises with a message
       naming the supported bindings
-- [ ] Test: `catalog.list()` performs no vendor-module imports
-- [ ] Test: a variant with `process_data: null` raises a clear
-      "layout unavailable, IODD required" error on decode — never a silent
-      wrong answer
+- [x] Test: no shipped ifm master serves MQTT *and* OPC UA *and* EtherNet/IP
+- [x] Test: `catalog.list_parts()` parses no YAML and calls no
+      `EntryPoint.load()`
+- [x] Test: a variant with `process_data: null` raises a clear
+      "layout unavailable, IODD required" error naming the part, the variant,
+      and the IODD to go and fetch — never a silent wrong answer
 - [ ] **Golden decode test** — known VVB020 PDIn bytes → expected engineering
       values, hand-computed from the IODD gradient/offset
       *(**blocked** on obtaining the IODD — see Phase 0)*
+
+> **On "`list()` must not import vendor modules".** Partly achieved, and worth
+> stating precisely. `list_parts()` never calls `EntryPoint.load()`, so no
+> vendor *code* runs, and it parses no YAML — the file name is the part number
+> and the directory name is the vendor, so listing 400 parts costs zero parses.
+> It does import the vendor's data package, because that is what
+> `importlib.resources.files()` requires to locate the directory. Vendor pack
+> `__init__.py` files must therefore stay empty. Both guarantees are pinned by
+> tests.
+
+> **`port_count` for AL1350 / AL1352 is `null`.** The researched manuals state
+> port counts for AL1320/AL1321 (4) and AL1322/AL1323 (8) but not for the IoT
+> masters, so the field is unset rather than assumed. Same rule as the bit
+> offsets.
 
 ---
 

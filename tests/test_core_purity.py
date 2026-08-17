@@ -52,6 +52,7 @@ CORE_MODULES = (
     "loopsheet.models.reading",
     "loopsheet.models.channel",
     "loopsheet.models.processdata",
+    "loopsheet.models.protocol",
     "loopsheet.models.asset",
     "loopsheet.models.component_base",
     "loopsheet.models.sensor",
@@ -65,6 +66,11 @@ CORE_MODULES = (
     "loopsheet.codec.processdata",
     "loopsheet.codec.decode",
     "loopsheet.codec.scaling",
+    # `catalog` reads YAML, so it imports `yaml` — a *core* dependency, not an
+    # extra. The rule is that nothing behind an optional extra reaches core.
+    "loopsheet.catalog",
+    "loopsheet.catalog.schema",
+    "loopsheet.catalog.registry",
 )
 
 
@@ -113,7 +119,7 @@ def test_core_imports_with_every_optional_dependency_sabotaged(
 
 @pytest.mark.parametrize(
     "first",
-    ["loopsheet.models", "loopsheet.codec"],
+    ["loopsheet.models", "loopsheet.codec", "loopsheet.catalog"],
 )
 def test_either_subpackage_can_be_imported_first(first: str) -> None:
     """`models` and `codec` reference each other's modules; neither may deadlock.

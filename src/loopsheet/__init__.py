@@ -20,6 +20,8 @@ lives behind an optional extra and is imported only from
 
 from __future__ import annotations
 
+from loopsheet import catalog
+from loopsheet.catalog import CatalogEntry, DeviceVariant
 from loopsheet.codec import decode, decode_hex, scale
 from loopsheet.errors import (
     CapabilityError,
@@ -35,6 +37,7 @@ from loopsheet.models import (
     AnalogSensor,
     Area,
     Bearing,
+    BindingProtocol,
     ChannelSpec,
     Component,
     DaqDevice,
@@ -58,8 +61,7 @@ from loopsheet.models import (
 
 __version__ = "0.1.0a0"
 
-# TODO(loopsheet): `load_machine` arrives with io/loader.py in TODO.md Phase 4;
-# `catalog` with the registry in Phase 3. Both belong in this namespace.
+# TODO(loopsheet): `load_machine` arrives with io/loader.py in TODO.md Phase 4.
 
 __all__ = [
     "COMPONENT_ADAPTER",
@@ -68,12 +70,15 @@ __all__ = [
     "AnalogSensor",
     "Area",
     "Bearing",
+    "BindingProtocol",
     "CapabilityError",
+    "CatalogEntry",
     "CatalogError",
     "ChannelSpec",
     "Component",
     "DaqDevice",
     "DecodeError",
+    "DeviceVariant",
     "DiscreteSensor",
     "EdgeDevice",
     "Fan",
@@ -93,6 +98,7 @@ __all__ = [
     "Signal",
     "Site",
     "__version__",
+    "catalog",
     "decode",
     "decode_hex",
     "scale",

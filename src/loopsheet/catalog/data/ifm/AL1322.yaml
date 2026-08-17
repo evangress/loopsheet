@@ -1,0 +1,55 @@
+# ifm AL1322 — IO-Link master, DataLine, EtherNet/IP, 8 port, IP 67.
+#
+# Sources and reasoning: docs/research/ifm-masters.md
+#
+# NO MQTT. The AL1322 manual at FW 2.3.x has no MQTT chapter, while the 4-port
+# AL1320 at FW 3.1.x does. Capability is a function of (part, firmware), and
+# this entry is the pair that proves it.
+
+schema_version: 1
+part_number: AL1322
+vendor: ifm
+component_type: iolink_master
+product_name: IO-Link Master DL EIP 8P IP67
+family: DataLine
+description: >-
+  8-port IO-Link master with EtherNet/IP on the fieldbus interface and a
+  separate ifm IoT Core port.
+
+sources:
+  - "ifm operating instructions AL1322, 80284132/00, FW 2.3.x"
+  - "Omron NJ/NX <-> ifm AL1322 EtherNet/IP Connection Guide P700"
+
+firmware: 2.3.x
+port_count: 8
+
+supported_bindings:
+  - protocol: ethernet_ip
+    firmware: 2.3.x
+    verified: true
+    notes: >-
+      Assembly instances are identical to the 4-port masters — config 199,
+      input 100/101/102, output 150/151 — but the byte maps differ: on the
+      8-port, IO-Link input data starts at byte 190 of instance 100 with stride
+      n, against byte 118 on the 4-port. Identity object: vendor ID 322, device
+      type 12, product code 1322, revision 1.1, product name
+      "IO-Link Master DL EIP 8P IP67". EDS: ifm_IOL_Master_AL1322.eds.
+
+  - protocol: iotcore
+    firmware: 2.3.x
+    verified: true
+    notes: Served on a separate IoT port from the fieldbus interface.
+
+# Confirmed absent at this firmware:
+#   mqtt   — no MQTT chapter in the AL1322 manual (present on AL1320 at FW 3.1.x)
+#   opcua  — "OPC" appears zero times
+#   modbus_tcp
+
+default_ip: 192.168.1.250   # EtherNet/IP interface; separate IoT port is
+                            # link-local 169.254.x.x.
+
+notes: >-
+  The EtherNet/IP identity object's vendor ID is 322 — a CIP vendor ID, and NOT
+  the same number as ifm's IO-Link vendor ID of 310. Do not conflate them. The
+  AUX PWR status-bit polarity is UNVERIFIED: the manual's legend is
+  self-contradictory.

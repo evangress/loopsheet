@@ -1,0 +1,62 @@
+# ifm AL1320 — IO-Link master, DataLine, EtherNet/IP, 4 port, IP 67.
+#
+# Sources and reasoning: docs/research/ifm-masters.md
+#
+# Note the firmware-dependent capability: this master has MQTT at FW 3.1.x,
+# while the 8-port AL1322 at FW 2.3.x does not. Same protocol family, different
+# capability — which is exactly why supported_bindings is per part rather than
+# per family.
+
+schema_version: 1
+part_number: AL1320
+vendor: ifm
+component_type: iolink_master
+product_name: IO-Link Master DL EIP 4P IP67
+family: DataLine
+description: >-
+  4-port IO-Link master with EtherNet/IP on the fieldbus interface and a
+  separate ifm IoT Core port.
+
+sources:
+  - "ifm operating instructions AL1320, 80284121/02, FW 3.1.x"
+
+firmware: 3.1.x
+port_count: 4
+
+supported_bindings:
+  - protocol: ethernet_ip
+    firmware: 3.1.x
+    verified: true
+    notes: >-
+      Assembly instances: config 199, input 100/101/102, output 150/151.
+      Connection sizes derive from the per-port process-data length n set by
+      config byte 1. PQI bit 2 = invalid data. ISDU over explicit messaging at
+      class 0x80, instance 0x01, attribute = port number, services 0x4B read /
+      0x4C write. RPI minimum 1 ms — ifm publishes no recommended default, so
+      none is invented here.
+
+  - protocol: iotcore
+    firmware: 3.1.x
+    verified: true
+    notes: >-
+      Served on a separate IoT port from the fieldbus interface. Port config is
+      writable only when the fieldbus PLC is not RUNNING.
+
+  - protocol: mqtt
+    firmware: 3.1.x
+    verified: true
+    notes: >-
+      Present at FW 3.1.x. Plaintext, no auth; max 10 connections; no topic
+      wildcards.
+
+# Confirmed absent: opcua (zero hits across the EtherNet/IP manuals),
+# modbus_tcp (that is AL1342/AL1343).
+
+default_ip: 192.168.1.250   # EtherNet/IP interface. The separate IoT port
+                            # defaults to a link-local 169.254.x.x address.
+
+notes: >-
+  EDS filename UNVERIFIED for this part — only the AL1322's
+  (ifm_IOL_Master_AL1322.eds) was confirmed. Vendor-ID byte order in the
+  config-assembly per-port block is also UNVERIFIED: the AL1320 manual prints
+  LSB/MSB while the AL1322 prints MSB/LSB for the same field.

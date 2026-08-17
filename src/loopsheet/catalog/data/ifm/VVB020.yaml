@@ -1,0 +1,153 @@
+# ifm VVB020 — single-axis MEMS vibration sensor with IO-Link.
+#
+# Sources and reasoning: docs/research/ifm-vvb020.md
+#
+# READ BEFORE EDITING. Every number below is traced to a datasheet or manual.
+# The process-data bit layout is NOT, because the IODD could not be obtained:
+# IODDfinder requires a login for zip downloads (401) and ifm.com is
+# Akamai-blocked (403). Unverified values ship as null with an explicit
+# UNVERIFIED marker. A wrong bit offset silently decodes plausible garbage,
+# which is strictly worse than a missing one.
+
+schema_version: 1
+part_number: VVB020
+vendor: ifm
+component_type: iolink_sensor
+product_name: Vibration sensor with IO-Link interface
+family: VVB
+description: >-
+  Single-axis capacitive MEMS vibration sensor for condition monitoring.
+  Measures v-RMS, a-Peak, a-RMS, crest factor and temperature over a
+  2…10 000 Hz sensing range.
+
+sources:
+  - "ifm device manual 'Vibration sensor with IO-Link interface VV', 80298004/01 06/2021 GB"
+  - "ifm efector VVB datasheet, EN-US -- VVB020-01 -- 13.04.2023"
+  - "ifm VVB020 datasheet, DE-DE -- VVB020-01 (used to disambiguate column alignment)"
+  - "IODDfinder registry API, vendorId 310, productName VVB020"
+
+iolink:
+  vendor_id: 310                  # 0x0136, "ifm electronic gmbh" — verified
+  revision: "1.1"                 # SDCI per IEC 61131-9:2013-07
+  sio_supported: true
+  port_class: A
+  profiles:
+    - blob
+    - common_id
+    - function_measurement
+
+# A part number is not one IO-Link identity. These two are distinguished at the
+# wire level by device ID and have DIFFERENT process data. The machine file must
+# pin one; guessing decodes the wrong values.
+variants:
+  - id: status_a
+    device_id: 1257               # 0x04E9 — verified
+    com_mode: COM2                # 38.4 kBaud
+    min_cycle_time_ms: 11.6
+    iodd: ifm-0004E9-20200110-IODD1.1   # v1.3.63.923543, ioddId 8438
+    has_pdout: false
+    pdin_length_bits: null        # UNVERIFIED — needs the IODD
+    process_data: null            # UNVERIFIED — needs the IODD
+    description: Software status A. Switchable PD values v-RMS, a-Peak, a-RMS.
+
+  - id: status_b
+    device_id: 1369               # 0x0559 — verified
+    com_mode: COM3                # 230.4 kBaud
+    min_cycle_time_ms: 3.6
+    iodd: ifm-000559-20201105-IODD1.1   # v1.3.66.1043016, ioddId 10375
+    has_pdout: true
+    pdin_length_bits: null        # UNVERIFIED — needs the IODD
+    process_data: null            # UNVERIFIED — needs the IODD
+    pdout_length_bits: null       # UNVERIFIED
+    process_data_out: null        # UNVERIFIED — PDOut bit no. 4 triggers a BLOB
+                                  # record, but whether "no. 4" is 0- or 1-based
+                                  # is not stated in the manual
+    description: >-
+      Software status B. Adds crest and temperature to the switchable PD values,
+      allows OU1/OU2 = OFF, and has PDOut. The master port must have device
+      identification enabled or a status-B unit is rejected.
+
+# The semantics are known even where the bits are not. Ranges, units and filter
+# bands come from the VVB020-specific datasheet columns; the bands are the
+# FACTORY filter settings, not fixed hardware limits — the filter chain is
+# configurable, and two v-RMS numbers from different filter settings are not
+# comparable.
+channels:
+  - name: v_rms
+    description: RMS vibration velocity.
+    unit: mm/s                    # datasheet quotes mm/s; the FACTORY DEFAULT
+                                  # unit is m/s (uni-v-RMS ∈ m/s, mm/s, inch/s)
+    range: {low: 0.0, high: 45.0}
+    band_hz: {low_hz: 10.0, high_hz: 1000.0}   # FILT-DC 10 Hz HP + FILT-V 1 kHz LP
+
+  - name: a_peak
+    description: Peak vibration acceleration.
+    unit: m/s²
+    range: {low: 0.0, high: 490.3}             # 0…50 g
+    band_hz: {low_hz: 10.0, high_hz: 5000.0}   # FILT-DC 10 Hz HP + FILT-A 5 kHz LP
+
+  - name: a_rms
+    description: RMS vibration acceleration.
+    unit: m/s²
+    range: {low: 0.0, high: 490.3}             # 0…50 g
+    band_hz: {low_hz: 10.0, high_hz: 5000.0}
+
+  - name: crest
+    description: >-
+      Crest factor, a-Peak / a-RMS. The bearing-damage indicator — there is no
+      separate ISO 10816 damage-class process value on this device.
+    unit: ""                      # explicitly dimensionless, not "unknown"
+    range: {low: 1.0, high: 50.0}
+
+  - name: temperature
+    description: Surface temperature at the sensor foot.
+    unit: °C
+    range: {low: -30.0, high: 80.0}
+    resolution: 0.1
+    accuracy: "± 2.5 K + (0.2 x (T_ambient - T_surface))"
+
+# UNVERIFIED — no ISDU index or subindex for any VVB020 parameter was found on
+# any reachable page. The manual lists parameters by NAME only and defers to the
+# IODD. Even the spec-defined direct parameters (16 VendorName, 17 VendorText,
+# 18 ProductName, 19 ProductID, 21 SerialNumber, 24 ApplicationSpecificTag) are
+# implied by the Common-I&D profile but not enumerated for this part, so they
+# are not asserted here.
+parameters: []
+
+electrical:
+  supply_voltage_v: {low: 18.0, high: 30.0}
+  current_consumption_ma_max: 50.0
+  digital_outputs: 2
+  analog_output: null             # confirmed ABSENT — the VVB020 has no 4-20 mA
+                                  # output. Any analog-output entry would be wrong
+  protection_class: III
+  connector: {type: M12, coding: A, pins: 4}
+  pinout:
+    1: {function: "L+", colour: BN}
+    2: {function: OUT2, colour: WH}
+    3: {function: "L-", colour: BU}
+    4: {function: OUT1_OR_IOLINK, colour: BK}
+
+mechanical:
+  weight_g: 116.5
+  material: Stainless steel 1.4404 / 316L
+  diameter_mm: 22.0
+  length_mm: 63.55
+  mounting: Set screw, M8 ≥ 10 mm deep or 1/4"-UNF ≥ 13 mm deep
+  tightening_torque_nm: 8.0
+
+environment:
+  ambient_temperature_c: {low: -30.0, high: 80.0}
+  storage_temperature_c: {low: -30.0, high: 80.0}
+  ip_ratings: [IP 67, IP 68, IP 69K]
+  shock: 50 g / 11 ms and 500 g / 1 ms
+  vibration: 20 g, 10…3000 Hz
+  mtbf_years: 299.0
+
+notes: >-
+  Mounting caps usable bandwidth: screw ≈15 kHz, direct gluing ≈8 kHz, magnet
+  ≈3 kHz. A 5 kHz a-RMS channel on a magnet-mounted sensor is not measuring what
+  the datasheet says it measures. Application class: medium-sized machines,
+  power < 300 kW, speed > 600 rpm. UL rating is Ta -30…60 °C, narrower than the
+  -30…80 °C ambient range. Hardware version BC has a temporarily changed ambient
+  range that the datasheet does not state (UNVERIFIED).

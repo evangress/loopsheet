@@ -68,10 +68,13 @@ Issues = "https://github.com/evangress/loopsheet/issues"
 # [project.scripts]
 # loopsheet = "loopsheet.cli:main"
 
-# Third parties ship vendor catalog packs by advertising the `loopsheet.catalog`
-# entry-point group. `catalog.list()` reads entry-point metadata only — it must
-# never import the vendor module to enumerate part numbers (PLAN.md §3). The
-# built-in ifm pack registers itself here in TODO.md Phase 3.
+# Third parties ship vendor catalog packs by advertising this group. The value
+# is an importable package holding one YAML file per part number; the file name
+# IS the part number, so `catalog.list_parts()` enumerates without parsing YAML
+# or running vendor code. The built-in ifm pack registers here too, so the
+# third-party path is the one that is actually exercised.
+[project.entry-points."loopsheet.catalog"]
+ifm = "loopsheet.catalog.data.ifm"
 
 # --------------------------------------------------------------------------- #
 # Dev tooling (uv-native group; installed by `uv sync` by default)            #
