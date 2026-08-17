@@ -7,6 +7,10 @@ dist/
 .eggs/
 
 # Environments (uv)
+# `.venv/` is disposable — `uv sync` rebuilds it from uv.lock.
+# NOT ignored, and must stay that way: `uv.lock` (the resolution) and
+# `.python-version` (the interpreter). Together they are what make a fresh
+# clone reproduce this environment exactly.
 .venv/
 venv/
 

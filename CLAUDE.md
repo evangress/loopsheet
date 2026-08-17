@@ -160,12 +160,31 @@ uv run pytest -q                     # tests
 uv run ruff format .                 # format
 uv run ruff check . --fix            # lint
 uv run mypy src/loopsheet            # types must pass clean
+uv sync --locked                     # fails if uv.lock has drifted from pyproject
 
 uv run loopsheet validate examples/filler_line_3.yaml
 uv run loopsheet show examples/filler_line_3.yaml
 uv run loopsheet decode ifm:VVB020 0A1B2C3D --variant status_b
 uv run loopsheet export --format topics examples/filler_line_3.yaml
 ```
+
+**Always `uv run`, never a bare `python` or `pytest`.** The environment is
+`uv`-managed and the project is installed into `.venv` as an editable install,
+so `uv run` is what puts `src/loopsheet` on the path. A bare `python` picks up
+whatever interpreter is first on `PATH` — on a typical dev box that is a
+*system* Python with none of this installed, and the failure mode is a
+confusing `ModuleNotFoundError` or, worse, a stale copy that imports fine and
+tests the wrong code.
+
+**The interpreter is pinned.** `.python-version` says `3.11`, matching
+`requires-python`, ruff's `target-version`, and mypy's `python_version`. The
+suite therefore runs on the oldest version the package promises to support,
+which is the one most likely to break for an external audience. Do not bump it
+without bumping `requires-python` — and if you want coverage on newer versions,
+that belongs in a CI matrix, not in this pin.
+
+`uv.lock` is committed. Regenerate it with `uv lock` when dependencies change
+and commit the result in the same change.
 
 **Definition of done for any change:** `ruff check` clean, `mypy --strict`
 clean, `pytest` green, and a test added or updated that would fail without the
