@@ -39,61 +39,92 @@ change.
 
 ---
 
-## Phase 1 — Scaffold
+## Phase 1 — Scaffold ✅
 
-- [ ] `uv init --lib`, src layout at `src/loopsheet/`
-- [ ] `pyproject.toml` modelled on `../sonome/pyproject.toml`
-  - [ ] hatchling build backend, `packages = ["src/loopsheet"]`
-  - [ ] `requires-python = ">=3.11"`, Apache-2.0, Kovir Labs / Evan Gress
-  - [ ] core deps: `pydantic>=2.9`, `pyyaml` — nothing else
-  - [ ] optional extras: `mqtt` `async` `opcua` `enip` `iotcore` `modbus` `units` `aas`
-  - [ ] `[dependency-groups] dev`: pytest, pytest-cov, ruff, mypy
-  - [ ] ruff line-length 100, `select = [E,W,F,I,UP,B,SIM,C4,RUF]`
-  - [ ] mypy `strict = true`, per-module `ignore_missing_imports` overrides
-  - [ ] pytest `testpaths=["tests"]`, `addopts = "-ra --strict-markers"`
-  - [ ] `[project.scripts] loopsheet = "loopsheet.cli:main"`
-- [ ] `LICENSE` (Apache-2.0) and `NOTICE`
-- [ ] `CLAUDE.md` in the house template — `## Commands` / `## Architecture` /
+- [x] `uv init --lib`, src layout at `src/loopsheet/` (+ `py.typed`)
+- [x] `pyproject.toml` modelled on `../sonome/pyproject.toml`
+  - [x] hatchling build backend, `packages = ["src/loopsheet"]`
+  - [x] `requires-python = ">=3.11"`, Apache-2.0, Kovir Labs / Evan Gress
+  - [x] core deps: `pydantic>=2.9`, `pyyaml` — nothing else
+  - [x] optional extras: `mqtt` `async` `opcua` `enip` `iotcore` `modbus` `units` `aas`
+  - [x] `[dependency-groups] dev`: pytest, pytest-cov, ruff, mypy, types-pyyaml
+  - [x] ruff line-length 100, `select = [E,W,F,I,UP,B,SIM,C4,RUF]`
+  - [x] mypy `strict = true`, `pydantic.mypy` plugin, per-module
+        `ignore_missing_imports` overrides for the optional protocol libs
+  - [x] pytest `testpaths=["tests"]`, `addopts = "-ra --strict-markers"`
+  - [ ] `[project.scripts] loopsheet = "loopsheet.cli:main"` — commented out
+        until `cli.py` exists (Phase 7), so the build stays installable
+- [x] `LICENSE` (Apache-2.0) and `NOTICE`
+- [x] `CLAUDE.md` in the house template — `## Commands` / `## Architecture` /
       invariants, including the **core-purity hard rule**
-- [ ] `README.md`, `ROADMAP.md`, `CHANGELOG.md`, `.gitignore`
-- [ ] `uv sync` succeeds; empty `pytest` run is green
-- [ ] First commit
+- [x] `README.md`, `ROADMAP.md`, `CHANGELOG.md`, `.gitignore`
+- [x] `uv sync` succeeds; `pytest` run is green
+- [x] First commit
 
 ---
 
-## Phase 2 — Core models + codec
+## Phase 2 — Core models + codec ✅
 
 **No imports beyond `pydantic` and the stdlib in any file in this phase.**
+Enforced by `tests/test_core_purity.py`, which sabotages every optional
+dependency out of `sys.modules` and imports each core module.
 
 ### models/
-- [ ] `base.py` — `LoopsheetModel` base, `SCHEMA_VERSION`, `semantic_id` field
-- [ ] `reading.py` — frozen `Reading(name, value, unit, timestamp, quality, source)`
-- [ ] `channel.py` — `ChannelSpec` (unit, range, datatype, provenance metadata), `Signal`
-- [ ] `asset.py` — `Motor` · `Pump` · `Gearbox` · `Bearing` · `Fan`, `MeasurementPoint`
-- [ ] `site.py` — `Site` → `Area` → `Machine`, with `Machine.find(tag)`
-- [ ] `sensor.py` — `IOLinkSensor` · `AnalogSensor` · `DiscreteSensor`
-- [ ] `iolink.py` — `IOLinkMaster` · `Port` · `PortMode` · `ValidationMode`
-- [ ] `controller.py` — `PLC` · `Chassis` · `IOModule` · `IOChannel` · `Tag`
-- [ ] `daq.py` — `DaqDevice` · `EdgeDevice`
-- [ ] `component.py` — `Component` union discriminated on `component_type`;
-      export `TypeAdapter(Component)` publicly
+- [x] `base.py` — `LoopsheetModel` base (`extra="forbid"`), `SCHEMA_VERSION`,
+      `SemanticModel` carrying `semantic_id`, and the constrained `Identifier` /
+      `PartRef` / `PortNumber` types
+- [x] `units.py` — closed unit vocabulary + ASCII alias normalisation *(not in
+      the original plan; `unit: "mm/S"` needed to fail at load time)*
+- [x] `datatype.py` — `IOLinkDataType` enum. Lives in `models`, not `codec`, so
+      the dependency direction stays one-way
+- [x] `reading.py` — frozen `Reading(name, value, unit, timestamp, quality,
+      source, raw)` + `Quality` (good / uncertain / bad)
+- [x] `channel.py` — `ChannelSpec` (unit, range, datatype, provenance
+      metadata), `ValueRange`, `FrequencyBand`, `Signal`
+- [x] `processdata.py` — `ProcessDataItem` / `ProcessDataLayout` *(moved here
+      from `codec/` — layout is description, decoding is behaviour;
+      `codec/processdata.py` re-exports)*
+- [x] `asset.py` — `Motor` · `Pump` · `Gearbox` · `Bearing` · `Fan`,
+      `MeasurementPoint`, `Location` / `Axis` / `Mounting`
+- [x] `site.py` — `Site` → `Area` → `Machine`, with `Machine.find(tag)` and
+      cross-reference / duplicate-port integrity validators
+- [x] `sensor.py` — `IOLinkSensor` · `AnalogSensor` · `DiscreteSensor`
+- [x] `iolink.py` — `IOLinkMaster` · `Port` · `PortMode` · `ValidationMode` ·
+      `CycleTime`
+- [x] `controller.py` — `PLC` · `Chassis` · `IOModule` · `IOChannel` · `Tag`
+- [x] `daq.py` — `DaqDevice` · `EdgeDevice`
+- [x] `component.py` — `Component` union discriminated on `component_type`;
+      `COMPONENT_ADAPTER` exported publicly; `dump_component()` guards the
+      discriminator against `exclude_defaults` dropping it
+- [x] `errors.py` at package root — `LoopsheetError` and friends
 
 ### codec/
-- [ ] `datatypes.py` — IO-Link `IntegerT` / `UIntegerT` / `BooleanT` / `Float32T`
-- [ ] `processdata.py` — `ProcessDataItem`, `ProcessDataLayout` with a
-      `model_validator` rejecting overlapping bit ranges
-- [ ] `decode.py` — `decode(raw: bytes, layout) -> dict[str, Reading]`,
-      MSB-first per IO-Link convention, gradient + offset applied
-- [ ] `scaling.py` — analog raw counts ⇄ engineering units (4-20 mA, 0-10 V),
-      including under/over-range and broken-wire handling
+- [x] `datatypes.py` — `from_bits` / `to_signed` / `to_unsigned` for IO-Link
+      `IntegerT` / `UIntegerT` / `BooleanT` / `Float32T` / `StringT`
+- [x] `processdata.py` — re-export; the `model_validator` rejecting overlapping
+      bit ranges lives with the model
+- [x] `decode.py` — `decode(raw: bytes, layout) -> dict[str, Reading]`,
+      big-endian octets with IODD LSB-relative item offsets, gradient + offset
+      applied; `decode_hex()` for ifm IoT Core's hex strings
+- [x] `scaling.py` — analog raw counts ⇄ engineering units (4-20 mA, 0-10 V),
+      with NAMUR NE 43 under/over-range and broken-wire classification
 
 ### tests
-- [ ] Decoder unit tests **written before** `decode.py` — bit alignment across
-      byte boundaries, signed values, booleans, gradient/offset arithmetic
-- [ ] Overlapping-bit-range layout raises
-- [ ] Truncated / oversized `raw` raises a clear error
-- [ ] `TypeAdapter(Component)` round-trips every component subtype
-- [ ] JSON Schema generation succeeds for the component union
+- [x] Decoder unit tests — bit alignment across byte boundaries (2- and
+      3-byte spans), signed values, booleans, gradient/offset arithmetic
+- [x] Overlapping-bit-range layout raises, in either declaration order
+- [x] Truncated / oversized `raw` raises a clear error
+- [x] `COMPONENT_ADAPTER` round-trips every component subtype
+- [x] JSON Schema generation succeeds for the component union
+- [x] Core-purity test with every optional dependency sabotaged, plus a
+      cold-subprocess import in both `models`-first and `codec`-first order
+
+> **Bit-order note.** The plan said "MSB-first per IO-Link convention", which
+> conflates two things. Octets are transmitted MSB-first (assemble with
+> `int.from_bytes(raw, "big")`), but IODD `RecordItem/@bitOffset` counts an
+> item's LSB from the LSB of the *whole* word. Both are documented at the top
+> of `models/processdata.py` and pinned by
+> `test_item_at_offset_zero_is_the_last_transmitted_bits`.
 
 ---
 

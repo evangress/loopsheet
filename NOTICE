@@ -1,0 +1,47 @@
+loopsheet
+Copyright 2026 Kovir Labs · Evan Gress
+
+This product includes software developed at Kovir Labs (https://kovirlabs.dev).
+
+Licensed under the Apache License, Version 2.0. See LICENSE.
+
+--------------------------------------------------------------------------------
+Third-party dependencies
+--------------------------------------------------------------------------------
+
+Core (always installed):
+
+  pydantic      MIT
+  PyYAML        MIT
+
+Optional extras, lazy-imported from `loopsheet.adapters` only. Installing an
+extra does not change loopsheet's Apache-2.0 grant, but it does add that
+package's license to YOUR deployment:
+
+  paho-mqtt     EPL-2.0 OR BSD-3-Clause   [mqtt]
+  aiomqtt       BSD-3-Clause              [async]
+  asyncua       LGPL-3.0                  [opcua]   <-- copyleft; see below
+  pycomm3       MIT                       [enip]
+  httpx         BSD-3-Clause              [iotcore]
+  pymodbus      BSD-3-Clause              [modbus]
+  pint          BSD-3-Clause              [units]
+  basyx-python-sdk  MIT                   [aas]
+
+asyncua is LGPL-3.0. It is the single sharpest reason the extras split exists:
+no module under `loopsheet.models`, `loopsheet.codec`, `loopsheet.bindings`, or
+`loopsheet.catalog` may import it, directly or transitively. Keeping it out of
+the core import path keeps the Apache-2.0 grant clean.
+
+--------------------------------------------------------------------------------
+Device data
+--------------------------------------------------------------------------------
+
+Catalog files under `src/loopsheet/catalog/data/` describe third-party hardware.
+Part numbers, vendor names, and trademarks (ifm, efector, moneo, Rockwell,
+Allen-Bradley, EtherNet/IP, IO-Link, OPC UA) belong to their respective owners
+and are used here solely for identification and interoperability.
+
+No vendor IODD, EDS, or GSD file is vendored into this repository. Values in
+catalog files are transcribed from public datasheets and manuals, with sources
+recorded in `docs/research/`. Values that could not be traced to a primary
+source ship as `null` marked `# UNVERIFIED`, never as a plausible guess.
